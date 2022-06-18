@@ -5,8 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
+import javax.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -20,15 +19,9 @@ public class PhoneController {
         this.phoneService = phoneService;
     }
 
-    // TODO: probably rework to POST, so that it works like a login request
-    // TODO: create PhoneDTO
-    @GetMapping("/{phoneNumber}")
-    @ResponseBody
-    public ResponseEntity<String> validatePhonePin(@PathVariable String phoneNumber, @RequestParam @NotNull @Size(min = 4, max = 4) String pin) {
-        if (!pin.matches("[\\d]{4}"))
-            return new ResponseEntity<>("PIN musí obsahovať len čísla.", HttpStatus.BAD_REQUEST);
-        boolean isValid = phoneService.validatePin(phoneNumber, pin);
-
+    @PostMapping
+    public ResponseEntity<String> validatePhonePin(@Valid @RequestBody PhoneDTO phoneDTO) {
+        boolean isValid = phoneService.validatePin(phoneDTO.toPhone());
         return isValid ? new ResponseEntity<>("PIN je valídny.", HttpStatus.OK) : new ResponseEntity<>("PIN nie je valídny.", HttpStatus.OK);
     }
 

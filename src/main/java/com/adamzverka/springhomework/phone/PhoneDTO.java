@@ -1,43 +1,37 @@
 package com.adamzverka.springhomework.phone;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import javax.persistence.*;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import java.io.Serializable;
 
-@Entity
 @Getter
 @Setter
 @NoArgsConstructor
-public class Phone implements Serializable {
+public class PhoneDTO implements Serializable {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
-
-    @Column(length = 4)
     @NotNull
     @Pattern(regexp = "[\\d]{4}")
+    @Schema(example = "1234")
     private String pin;
 
-    @Column(unique = true)
     @NotNull
     @NotEmpty
+    @Schema(example = "+421123456789")
     private String phoneNumber;
 
-    public Phone(String pin, String phoneNumber) {
+    public PhoneDTO(String pin, String phoneNumber) {
         this.pin = pin;
         this.phoneNumber = phoneNumber;
     }
 
-    public Phone(long id, String pin, String phoneNumber) {
-        this.id = id;
-        this.pin = pin;
-        this.phoneNumber = phoneNumber;
+    // For a bigger project it may be better to create a separate class that handles mapping
+    public Phone toPhone() {
+        return new Phone(this.pin, this.phoneNumber);
     }
 }

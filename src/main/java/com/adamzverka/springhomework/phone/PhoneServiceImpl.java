@@ -8,7 +8,7 @@ import java.util.List;
 @Service
 public class PhoneServiceImpl implements PhoneService {
 
-    private PhoneRepository phoneRepository;
+    private final PhoneRepository phoneRepository;
 
     @Autowired
     public PhoneServiceImpl(PhoneRepository phoneRepository) {
@@ -16,12 +16,26 @@ public class PhoneServiceImpl implements PhoneService {
     }
 
     @Override
-    public boolean validatePin(String phoneNumber, String pin) {
-        return phoneRepository.existsPhoneByPhoneNumberAndPin(phoneNumber, pin);
+    public boolean validatePin(Phone phone) {
+        return phoneRepository.existsPhoneByPhoneNumberAndPin(phone.getPhoneNumber(), phone.getPin());
     }
 
     @Override
+    public Phone savePhone(Phone phone) {
+        return phoneRepository.save(phone);
+    }
+
+    /**
+     * Returns all phones saved in a database. (Used for debugging purposes)
+     * @return
+     */
+    @Override
     public List<Phone> getPhones() {
         return phoneRepository.findAll();
+    }
+
+    @Override
+    public void deleteAllPhones() {
+        phoneRepository.deleteAll();
     }
 }
