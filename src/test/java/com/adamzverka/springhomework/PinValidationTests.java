@@ -48,7 +48,7 @@ public class PinValidationTests {
 
     @Test
     public void validatePinWithCorrectInputs() {
-        PhoneDTO phoneInput = new PhoneDTO("1234", "+421 123456789");
+        PhoneDTO phoneInput = new PhoneDTO("1234", "+421123456789");
         ResponseEntity<String> response = restTemplate.postForEntity(url, phoneInput, String.class);
         assertEquals("PIN je valídny.", response.getBody());
     }
