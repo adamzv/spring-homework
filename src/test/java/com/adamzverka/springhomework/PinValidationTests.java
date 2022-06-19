@@ -3,10 +3,11 @@ package com.adamzverka.springhomework;
 import com.adamzverka.springhomework.phone.Phone;
 import com.adamzverka.springhomework.phone.PhoneDTO;
 import com.adamzverka.springhomework.phone.PhoneService;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -14,12 +15,12 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.util.stream.Stream;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-// change the lifecycle of the test instance to be able to use @BeforeAll on a non-static method
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class PinValidationTests {
+class PinValidationTests {
 
     @LocalServerPort
     private int port;
@@ -32,7 +33,7 @@ public class PinValidationTests {
 
     private String url;
 
-    @BeforeAll
+    @BeforeEach
     public void initDatabase() {
         phoneService.savePhone(new Phone(1, "1234", "+421123456789"));
         phoneService.savePhone(new Phone(2, "0000", "+421111111111"));
@@ -41,57 +42,45 @@ public class PinValidationTests {
         url = "http://localhost:" + port + "/api/v1/phones";
     }
 
-    @AfterAll
+    @AfterEach
     public void clearDatabase() {
         phoneService.deleteAllPhones();
     }
 
     @Test
-    public void validatePinWithCorrectInputs() {
+    void validatePinWithCorrectInputs() {
         PhoneDTO phoneInput = new PhoneDTO("1234", "+421123456789");
         ResponseEntity<String> response = restTemplate.postForEntity(url, phoneInput, String.class);
         assertEquals("PIN je valídny.", response.getBody());
     }
 
-    @Test
-    public void validateWithIncorrectInputs() {
-        PhoneDTO phoneInput = new PhoneDTO("1235", "+421 77777777");
+    @ParameterizedTest
+    @MethodSource("generateIncorrectPhoneInputs")
+    void validateWithIncorrectPin(PhoneDTO phoneInput) {
         ResponseEntity<String> response = restTemplate.postForEntity(url, phoneInput, String.class);
         assertEquals("PIN nie je valídny.", response.getBody());
     }
 
-    @Test
-    public void validateWithIncorrectPin() {
-        PhoneDTO phoneInput = new PhoneDTO("1235", "+421 123456789");
-        ResponseEntity<String> response = restTemplate.postForEntity(url, phoneInput, String.class);
-        assertEquals("PIN nie je valídny.", response.getBody());
-    }
-
-    @Test
-    public void validateWithIncorrectPinContainingLetters() {
-        PhoneDTO phoneInput = new PhoneDTO("abcd", "+421 123456789");
+    @ParameterizedTest
+    @MethodSource("generateInvalidPhoneInputs")
+    void validateWithNullPhoneNumber(PhoneDTO phoneInput) {
         ResponseEntity<String> response = restTemplate.postForEntity(url, phoneInput, String.class);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 
-    @Test
-    public void validateWithIncorrectPinContainingMoreNumbers() {
-        PhoneDTO phoneInput = new PhoneDTO("12345", "+421 123456789");
-        ResponseEntity<String> response = restTemplate.postForEntity(url, phoneInput, String.class);
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    private static Stream<PhoneDTO> generateIncorrectPhoneInputs() {
+        return Stream.of(
+                new PhoneDTO("1235", "+421123456789"),
+                new PhoneDTO("1235", "+42177777777")
+        );
     }
 
-    @Test
-    public void validateWithNullPin() {
-        PhoneDTO phoneInput = new PhoneDTO(null, "+421 123456789");
-        ResponseEntity<String> response = restTemplate.postForEntity(url, phoneInput, String.class);
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-    }
-
-    @Test
-    public void validateWithNullPhoneNumber() {
-        PhoneDTO phoneInput = new PhoneDTO("4567", null);
-        ResponseEntity<String> response = restTemplate.postForEntity(url, phoneInput, String.class);
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    private static Stream<PhoneDTO> generateInvalidPhoneInputs() {
+        return Stream.of(
+                new PhoneDTO("4567", null),
+                new PhoneDTO(null, "+421123456789"),
+                new PhoneDTO("12345", "+421123456789"),
+                new PhoneDTO("abcd", "+421123456789")
+        );
     }
 }
